@@ -63,6 +63,9 @@ func allSystemUsers() map[apiv1.SystemUser]mysql.User {
 }
 
 func (r *PerconaServerMySQLReconciler) ensureUserSecrets(ctx context.Context, cr *apiv1.PerconaServerMySQL) error {
+	log := logf.FromContext(ctx)
+	log.Info("ensureUserSecrets")
+
 	nn := types.NamespacedName{
 		Namespace: cr.Namespace,
 		Name:      cr.Spec.SecretsName,
