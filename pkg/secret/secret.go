@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	apiv1alpha1 "github.com/percona/percona-server-mysql-operator/api/v1alpha1"
 	"github.com/percona/percona-server-mysql-operator/pkg/tls"
@@ -56,8 +57,10 @@ var SecretUsers = []apiv1alpha1.SystemUser{
 }
 
 func FillPasswordsSecret(cr *apiv1alpha1.PerconaServerMySQL, secret *corev1.Secret) error {
+	log.Info("FillPasswordsSecret")
 	if cr.MySQLSpec().IsAsync() {
 		SecretUsers = append(SecretUsers, apiv1alpha1.UserReplication)
+		log.Info("it's async cluster, add UserReplication to SecretUsers")
 	}
 
 	if len(secret.Data) == 0 {
@@ -65,6 +68,7 @@ func FillPasswordsSecret(cr *apiv1alpha1.PerconaServerMySQL, secret *corev1.Secr
 	}
 	for _, user := range SecretUsers {
 		if _, ok := secret.Data[string(user)]; ok {
+			log.Info("user has password", "user", string(user))
 			continue
 		}
 		pass, err := generatePass()
@@ -72,6 +76,7 @@ func FillPasswordsSecret(cr *apiv1alpha1.PerconaServerMySQL, secret *corev1.Secr
 			return errors.Wrapf(err, "create %s user password", user)
 		}
 		secret.Data[string(user)] = pass
+		log.Info("set pass", "user", string(user))
 	}
 	return nil
 }
