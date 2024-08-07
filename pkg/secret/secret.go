@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"math/big"
 	mrand "math/rand"
+	"slices"
 	"time"
 
 	"github.com/pkg/errors"
@@ -57,8 +58,9 @@ var SecretUsers = []apiv1alpha1.SystemUser{
 }
 
 func FillPasswordsSecret(cr *apiv1alpha1.PerconaServerMySQL, secret *corev1.Secret) error {
+	log := logf.Log
 	log.Info("FillPasswordsSecret")
-	if cr.MySQLSpec().IsAsync() {
+	if cr.MySQLSpec().IsAsync() && !slices.Contains(SecretUsers, apiv1alpha1.UserReplication) {
 		SecretUsers = append(SecretUsers, apiv1alpha1.UserReplication)
 		log.Info("it's async cluster, add UserReplication to SecretUsers")
 	}
