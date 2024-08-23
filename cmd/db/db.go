@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
@@ -28,7 +29,6 @@ func NewDatabase(ctx context.Context, user apiv1alpha1.SystemUser, pass, host st
 	config.User = string(user)
 	config.Passwd = pass
 	config.Net = "tcp"
-	config.Addr = fmt.Sprintf("%s:%d", host, port)
 	config.DBName = "performance_schema"
 	config.Params = map[string]string{
 		"interpolateParams": "true",
@@ -36,6 +36,12 @@ func NewDatabase(ctx context.Context, user apiv1alpha1.SystemUser, pass, host st
 		"readTimeout":       "10s",
 		"writeTimeout":      "10s",
 		"tls":               "preferred",
+	}
+	addr := net.ParseIP(host)
+	if addr != nil && addr.To4() == nil {
+		config.Addr = fmt.Sprintf("[%s]:%d", host, port)
+	} else {
+		config.Addr = fmt.Sprintf("%s:%d", host, port)
 	}
 
 	db, err := sql.Open("mysql", config.FormatDSN())
