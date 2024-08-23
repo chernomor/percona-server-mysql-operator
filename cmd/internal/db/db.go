@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -66,7 +67,6 @@ func (p *DBParams) DSN() string {
 	config.User = string(p.User)
 	config.Passwd = p.Pass
 	config.Net = "tcp"
-	config.Addr = fmt.Sprintf("%s:%d", p.Host, p.Port)
 	config.DBName = "performance_schema"
 	config.Params = map[string]string{
 		"interpolateParams": "true",
@@ -74,6 +74,12 @@ func (p *DBParams) DSN() string {
 		"readTimeout":       fmt.Sprintf("%ds", p.ReadTimeoutSeconds),
 		"writeTimeout":      fmt.Sprintf("%ds", p.ReadTimeoutSeconds), // Use same timeout for write operations
 		"tls":               "preferred",
+	}
+	addr := net.ParseIP(p.Host)
+	if addr != nil && addr.To4() == nil {
+		config.Addr = fmt.Sprintf("[%s]:%d", p.Host, p.Port)
+	} else {
+		config.Addr = fmt.Sprintf("%s:%d", p.Host, p.Port)
 	}
 
 	return config.FormatDSN()
