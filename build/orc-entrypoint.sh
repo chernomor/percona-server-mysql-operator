@@ -46,6 +46,15 @@ if [ ! -d "/var/lib/orchestrator" ]; then
 	mkdir /var/lib/orchestrator
 fi
 
+
+[ -f "${ORC_CONF_PATH}/orc-topology.cnf" ] || {
+	cat >"${ORC_CONF_PATH}/orc-topology.cnf" <<-EOF
+	[client]
+	user=orchestrator
+	password=
+	EOF
+}
+
 set +o xtrace
 temp=$(mktemp)
 sed -r "s|^[#]?user=.*$|user=${TOPOLOGY_USER}|" "${ORC_CONF_PATH}/orc-topology.cnf" >"${temp}"
