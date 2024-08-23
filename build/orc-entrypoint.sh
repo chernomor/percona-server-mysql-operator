@@ -41,6 +41,14 @@ if [ -f "$PATH_TO_SECRET/$TOPOLOGY_USER" ]; then
 	TOPOLOGY_PASSWORD=$(<"${PATH_TO_SECRET}/${TOPOLOGY_USER}")
 fi
 
+[ -f "${ORC_CONF_PATH}/orc-topology.cnf" ] || {
+	cat >"${ORC_CONF_PATH}/orc-topology.cnf" <<-EOF
+	[client]
+	user=orchestrator
+	password=
+	EOF
+}
+
 set +o xtrace
 temp=$(mktemp)
 
