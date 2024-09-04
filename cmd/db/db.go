@@ -33,7 +33,7 @@ func NewDatabase(ctx context.Context, user apiv1alpha1.SystemUser, pass, host st
 	config.Params = map[string]string{
 		"interpolateParams": "true",
 		"timeout":           "10s",
-		"readTimeout":       "10s",
+		"readTimeout":       "10h",
 		"writeTimeout":      "10s",
 		"tls":               "preferred",
 	}
