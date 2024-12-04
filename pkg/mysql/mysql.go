@@ -126,6 +126,10 @@ func StatefulSet(cr *apiv1alpha1.PerconaServerMySQL, initImage, configHash, tlsH
 	t := true
 
 	annotations := make(map[string]string)
+	for k, v := range spec.Annotations {
+		annotations[k] = v
+	}
+
 	if configHash != "" {
 		annotations[string(naming.AnnotationConfigHash)] = configHash
 	}
