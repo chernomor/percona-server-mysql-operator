@@ -134,6 +134,9 @@ func StatefulSet(cr *apiv1.PerconaServerMySQL, initImage, configHash, tlsHash st
 	selector := MatchLabels(cr)
 
 	annotations := make(map[string]string)
+	for k, v := range cr.Spec.Proxy.HAProxy.Annotations {
+		annotations[k] = v
+	}
 	if configHash != "" {
 		annotations[string(naming.AnnotationConfigHash)] = configHash
 	}
