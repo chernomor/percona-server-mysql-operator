@@ -112,6 +112,9 @@ func StatefulSet(cr *apiv1alpha1.PerconaServerMySQL, initImage, tlsHash string) 
 	Replicas := spec.Size
 
 	annotations := make(map[string]string, 0)
+	for k, v := range spec.Annotations {
+		annotations[k] = v
+	}
 	if tlsHash != "" {
 		annotations[string(naming.AnnotationTLSHash)] = tlsHash
 	}
