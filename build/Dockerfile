@@ -38,7 +38,7 @@ RUN GOOS=$GOOS GOARCH=$TARGETARCH CGO_ENABLED=$CGO_ENABLED GO_LDFLAGS=$GO_LDFLAG
 RUN GOOS=$GOOS GOARCH=$TARGETARCH CGO_ENABLED=$CGO_ENABLED GO_LDFLAGS=$GO_LDFLAGS \
     go build -ldflags "-w -s -X main.GitCommit=$GIT_COMMIT -X main.GitBranch=$GIT_BRANCH -X main.BuildTime=$BUILD_TIME" \
     -o build/_output/bin/peer-list \
-    cmd/peer-list-via-annotates/main.go \
+    cmd/peer-list/main.go \
     && cp -r build/_output/bin/peer-list /usr/local/bin/peer-list
 RUN GOOS=$GOOS GOARCH=$TARGETARCH CGO_ENABLED=$CGO_ENABLED GO_LDFLAGS=$GO_LDFLAGS \
     go build -ldflags "-w -s -X main.GitCommit=$GIT_COMMIT -X main.GitBranch=$GIT_BRANCH -X main.BuildTime=$BUILD_TIME" \
