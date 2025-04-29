@@ -314,7 +314,8 @@ func RestoreJob(
 			Completions: &one,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Annotations: storage.Annotations,
+					Labels:      labels,
 				},
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
