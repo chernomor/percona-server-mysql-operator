@@ -37,3 +37,7 @@ install -o "$(id -u)" -g "$(id -g)" -m 0755 -D "${OPERATORDIR}/haproxy.cfg" "${B
 install -o "$(id -u)" -g "$(id -g)" -m 0755 -D "${OPERATORDIR}/haproxy-global.cfg" "${BINDIR}/haproxy-global.cfg"
 
 install -o "$(id -u)" -g "$(id -g)" -m 0755 -D "${OPERATORDIR}/pmm-prerun.sh" "${BINDIR}/pmm-prerun.sh"
+
+if [ -d /mysql-shared ]; then
+	chown 1001 -m 755 /mysql-shared
+fi
