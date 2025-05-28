@@ -31,6 +31,7 @@ import (
 var (
 	log            = logf.Log.WithName("sidecar")
 	sensitiveFlags = regexp.MustCompile("--password=(.*)|--.*-access-key=(.*)|--.*secret-key=(.*)")
+	socket         = ""
 )
 
 var status Status
@@ -85,6 +86,16 @@ func main() {
 	log.Error(http.ListenAndServe(":"+strconv.Itoa(mysql.SidecarHTTPPort), mux), "http server failed")
 }
 
+func getSocketOption() string {
+	path := fmt.Sprintf("--socket=%s/mysql.sock", mysql.SharedMountPath)
+	if _, err := os.Stat(path); err == nil {
+		socket_option := fmt.Sprintf("--socket=%s", path)
+		log.Info("Use custom socket", "path", path, "option", socket_option)
+		return socket_option
+	}
+	return ""
+}
+
 func getSecret(username apiv1alpha1.SystemUser) (string, error) {
 	path := filepath.Join(mysql.CredsMountPath, string(username))
 	sBytes, err := os.ReadFile(path)
@@ -114,7 +125,7 @@ func getNamespace() (string, error) {
 	return string(ns), nil
 }
 
-func xtrabackupArgs(user, pass string) []string {
+func xtrabackupArgs(user, pass, socket_option string) []string {
 	return []string{
 		"--backup",
 		"--stream=xbstream",
@@ -123,6 +134,7 @@ func xtrabackupArgs(user, pass string) []string {
 		"--target-dir=/backup/",
 		fmt.Sprintf("--user=%s", user),
 		fmt.Sprintf("--password=%s", pass),
+		socket_option,
 	}
 }
 
@@ -359,7 +371,7 @@ func createBackupHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	g, gCtx := errgroup.WithContext(req.Context())
 
-	xtrabackup := exec.CommandContext(gCtx, "xtrabackup", xtrabackupArgs(string(backupUser), backupPass)...)
+	xtrabackup := exec.CommandContext(gCtx, "xtrabackup", xtrabackupArgs(string(backupUser), backupPass, getSocketOption())...)
 
 	xbOut, err := xtrabackup.StdoutPipe()
 	if err != nil {
