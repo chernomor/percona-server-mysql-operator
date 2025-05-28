@@ -27,6 +27,9 @@ const (
 	tlsVolumeName    = "tls"
 	tlsMountPath     = "/etc/mysql/mysql-tls-secret"
 	BackupLogDir     = "/var/log/xtrabackup"
+	SharedVolumeName = "mysql-shared"
+	SharedPathPrefix = "/run/percona-server-db"
+	SharedMountPath  = "/mysql-shared"
 )
 
 const (
@@ -136,6 +139,7 @@ func StatefulSet(cr *apiv1alpha1.PerconaServerMySQL, initImage, configHash, tlsH
 	if tlsHash != "" {
 		annotations[string(naming.AnnotationTLSHash)] = tlsHash
 	}
+	HostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
 
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -261,6 +265,15 @@ func StatefulSet(cr *apiv1alpha1.PerconaServerMySQL, initImage, configHash, tlsH
 								Name: "backup-logs",
 								VolumeSource: corev1.VolumeSource{
 									EmptyDir: &corev1.EmptyDirVolumeSource{},
+								},
+							},
+							{
+								Name: SharedVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: SharedPathPrefix + "/" + NamespacedName(cr).String(),
+										Type: &HostPathDirectoryOrCreate,
+									},
 								},
 							},
 						},
@@ -545,6 +558,10 @@ func mysqldContainer(cr *apiv1alpha1.PerconaServerMySQL) corev1.Container {
 				Name:      configVolumeName,
 				MountPath: configMountPath,
 			},
+			{
+				Name:      SharedVolumeName,
+				MountPath: SharedMountPath,
+			},
 		},
 		Command:                  []string{"/opt/percona/ps-entrypoint.sh"},
 		Args:                     []string{"mysqld"},
@@ -595,6 +612,10 @@ func backupContainer(cr *apiv1alpha1.PerconaServerMySQL) corev1.Container {
 				Name:      "backup-logs",
 				MountPath: BackupLogDir,
 			},
+			{
+				Name:      SharedVolumeName,
+				MountPath: SharedMountPath,
+			},
 		},
 		Command:                  []string{"/opt/percona/sidecar"},
 		TerminationMessagePath:   "/dev/termination-log",
@@ -631,6 +652,10 @@ func heartbeatContainer(cr *apiv1alpha1.PerconaServerMySQL) corev1.Container {
 			{
 				Name:      credsVolumeName,
 				MountPath: CredsMountPath,
+			},
+			{
+				Name:      SharedVolumeName,
+				MountPath: SharedMountPath,
 			},
 		},
 		Command:                  []string{"/opt/percona/heartbeat-entrypoint.sh"},
