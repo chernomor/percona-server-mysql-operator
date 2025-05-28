@@ -1,9 +1,20 @@
 #!/bin/bash
 
 DATA_DIR='/var/lib/mysql'
-until [ ! -f "$DATA_DIR/bootstrap.lock" ] && [ ! -f "$DATA_DIR/clone.lock" ] && [ -S "$DATA_DIR/mysql.sock" ]; do
+SOCKET="$DATA_DIR/mysql.sock"
+
+while sleep 10; do
 	echo '[INFO] Waiting for MySQL initialization ...'
-	sleep 10
+	if [ -f "$DATA_DIR/bootstrap.lock" ] || [ -f "$DATA_DIR/clone.lock" ]; then
+		continue
+	fi
+	if [ -d "/mysql-shared" ] && [ -S "/mysql-shared/mysql.sock" ] ; then
+		SOCKET="/mysql-shared/mysql.sock"
+		break
+	fi
+	if [ -S "$SOCKET" ] ; then
+		break
+	fi
 done
 
 # wait until bootstrap start clone process
@@ -57,4 +68,5 @@ pt-heartbeat \
 	--table heartbeat \
 	--user "${HEARTBEAT_USER}" \
 	--password "${ESCAPED_HEARTBEAT_PASSWORD}" \
+	--socket "$SOCKET" \
 	--port "${MYSQL_ADMIN_PORT}"

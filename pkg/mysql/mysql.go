@@ -32,6 +32,9 @@ const (
 	tlsVolumeName         = "tls"
 	tlsMountPath          = "/etc/mysql/mysql-tls-secret"
 	BackupLogDir          = "/var/log/xtrabackup"
+	SharedVolumeName      = "mysql-shared"
+	SharedPathPrefix      = "/run/percona-server-db"
+	SharedMountPath       = "/mysql-shared"
 	vaultSecretVolumeName = "vault-keyring-secret"
 	vaultSecretMountPath  = "/etc/mysql/vault-keyring-secret"
 )
@@ -151,6 +154,33 @@ func StatefulSet(cr *apiv1.PerconaServerMySQL, initImage, configHash, tlsHash st
 	if tlsHash != "" {
 		annotations[string(naming.AnnotationTLSHash)] = tlsHash
 	}
+	HostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+	sharedVolumeMount := corev1.VolumeMount{
+		Name:      SharedVolumeName,
+		MountPath: SharedMountPath,
+	}
+	var initSecCtx *corev1.SecurityContext
+	if spec.ContainerSecurityContext == nil {
+		initSecCtx = &corev1.SecurityContext{}
+	} else {
+		initSecCtx = spec.ContainerSecurityContext.DeepCopy()
+	}
+	privileged := true // allow chmod for SharedVolumeName
+	var rootUser int64
+	rootUser = 0
+	initSecCtx.Privileged = &privileged
+	initSecCtx.RunAsUser = &rootUser
+	initContainer := k8s.InitContainer(
+		cr,
+		AppName,
+		initImage,
+		spec.InitContainer,
+		spec.ImagePullPolicy,
+		initSecCtx,
+		spec.Resources,
+		nil,
+	)
+	initContainer.VolumeMounts = append(initContainer.VolumeMounts, sharedVolumeMount)
 
 	sts := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -179,22 +209,23 @@ func StatefulSet(cr *apiv1.PerconaServerMySQL, initImage, configHash, tlsHash st
 					selector,
 					append(volumes(cr), spec.SidecarVolumes...),
 					[]corev1.Container{
-						k8s.InitContainer(
-							cr,
-							AppName,
-							initImage,
-							spec.InitContainer,
-							spec.ImagePullPolicy,
-							spec.ContainerSecurityContext,
-							spec.Resources,
-							nil,
-						),
+						initContainer,
 					},
 					containers(cr, secret),
 				),
 			},
 		},
 	}
+	sharedVolume := corev1.Volume{
+		Name: SharedVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: SharedPathPrefix + "/" + NamespacedName(cr).String(),
+				Type: &HostPathDirectoryOrCreate,
+			},
+		},
+	}
+	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, sharedVolume)
 
 	if cr.Spec.MySQL.VolumeSpec.PersistentVolumeClaim != nil {
 		sts.Spec.VolumeClaimTemplates = append(sts.Spec.VolumeClaimTemplates, volumeClaimTemplates(cr, spec)...)
@@ -618,6 +649,10 @@ func mysqldVolumeMounts(cr *apiv1.PerconaServerMySQL) []corev1.VolumeMount {
 			Name:      configVolumeName,
 			MountPath: configMountPath,
 		},
+		{
+			Name:      SharedVolumeName,
+			MountPath: SharedMountPath,
+		},
 	}
 
 	if cr.CompareVersion("0.11.0") >= 0 {
@@ -813,6 +848,10 @@ func heartbeatContainer(cr *apiv1.PerconaServerMySQL) corev1.Container {
 			{
 				Name:      credsVolumeName,
 				MountPath: naming.CredsMountPath,
+			},
+			{
+				Name:      SharedVolumeName,
+				MountPath: SharedMountPath,
 			},
 		},
 		Command:                  []string{"/opt/percona/heartbeat-entrypoint.sh"},
