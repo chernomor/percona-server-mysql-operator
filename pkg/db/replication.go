@@ -75,7 +75,7 @@ func (m *ReplicationDBManager) ChangeReplicationSource(ctx context.Context, host
 			SOURCE_SSL=1,
 			SOURCE_CONNECTION_AUTO_FAILOVER=1,
 			SOURCE_AUTO_POSITION=1,
-			SOURCE_RETRY_COUNT=3,
+			SOURCE_RETRY_COUNT=200000,
 			SOURCE_CONNECT_RETRY=60
 		`, apiv1alpha1.UserReplication, replicaPass, host, port)
 	err := m.db.exec(ctx, q, &outb, &errb)
