@@ -2,6 +2,7 @@ package ps
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -83,6 +84,21 @@ func (r *PerconaServerMySQLReconciler) smartUpdate(ctx context.Context, sts *app
 	if err != nil {
 		return err
 	}
+
+	hh := strings.Split(primaryHost, ".")
+
+	foundPrimary := false
+	for _, pod := range pods.Items {
+		if hh[0] == pod.Name {
+			foundPrimary = true
+			break
+		}
+	}
+	if !foundPrimary {
+		log.Info("primaryHost  is not among pods", "primaryHost", primaryHost)
+		return nil
+	}
+
 	idx, err := getPodIndexFromHostname(primaryHost)
 	if err != nil {
 		return err
