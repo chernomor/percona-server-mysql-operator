@@ -2,6 +2,7 @@ package async
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -230,7 +231,8 @@ func getTopology(ctx context.Context, fqdn string, peers sets.Set[string]) (stri
 
 		db, err := database.NewDatabase(ctx, params)
 		if err != nil {
-			return "", nil, errors.Wrapf(err, "connect to %s", peer)
+			log.Printf("skip peer '%s': %v", peer, err)
+			continue
 		}
 		defer db.Close()
 
@@ -251,6 +253,10 @@ func getTopology(ctx context.Context, fqdn string, peers sets.Set[string]) (stri
 		if status == mysqldb.ReplicationStatusActive {
 			primary = source
 		}
+	}
+
+	if replicas.Len() == 0 {
+		return "", nil, fmt.Errorf("no replicas")
 	}
 
 	if primary == "" && peers.Len() == 1 {
