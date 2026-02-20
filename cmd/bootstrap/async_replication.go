@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -211,7 +212,7 @@ func getTopology(ctx context.Context, peers sets.Set[string]) (string, []string,
 	for _, peer := range sets.List(peers) {
 		db, err := database.NewDatabase(ctx, apiv1alpha1.UserOperator, operatorPass, peer, mysql.DefaultAdminPort)
 		if err != nil {
-			log.Printf("connection error to '%s': %w", peer, err)
+			log.Printf("skip peer '%s': %v", peer, err)
 			continue
 		}
 		defer db.Close()
@@ -233,6 +234,10 @@ func getTopology(ctx context.Context, peers sets.Set[string]) (string, []string,
 		if status == mysqldb.ReplicationStatusActive {
 			primary = source
 		}
+	}
+
+	if replicas.Len() == 0 {
+		return "", nil, fmt.Errorf("no replicas")
 	}
 
 	if primary == "" && peers.Len() == 1 {
