@@ -211,7 +211,8 @@ func getTopology(ctx context.Context, peers sets.Set[string]) (string, []string,
 	for _, peer := range sets.List(peers) {
 		db, err := database.NewDatabase(ctx, apiv1alpha1.UserOperator, operatorPass, peer, mysql.DefaultAdminPort)
 		if err != nil {
-			return "", nil, errors.Wrapf(err, "connect to %s", peer)
+			log.Printf("connection error to '%s': %w", peer, err)
+			continue
 		}
 		defer db.Close()
 
