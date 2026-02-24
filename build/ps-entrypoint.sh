@@ -139,7 +139,8 @@ TLS_DIR=/etc/mysql/mysql-tls-secret
 CUSTOM_CONFIG_FILES=("/etc/mysql/config/auto-config.cnf" "/etc/mysql/config/my-config.cnf" "/etc/mysql/config/my-secret.cnf")
 
 create_default_cnf() {
-	POD_IP=$(hostname -I | awk '{print $1}')
+	# with dual-stack first address is v4, but services has v6 only, so try to get correct address
+	POD_IP=$(hostname -I | awk '{print $NF}')
 
 	if [[ ${HOSTNAME} =~ "-xb-" ]]; then
 		FQDN=${HOSTNAME}
