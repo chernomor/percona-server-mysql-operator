@@ -167,7 +167,11 @@ add_encryption_options() {
 }
 
 create_default_cnf() {
-	POD_IP=$(hostname -I | awk '{print $1}')
+	if [ -n "$ADMIN_NETS_PREFIX" ]; then
+		POD_IP=$(hostname -I | tr ' ' "\n" | grep "^$ADMIN_NETS_PREFIX")
+	else
+		POD_IP=$(hostname -I | awk '{print $1}')
+	fi
 
 	if [[ ${HOSTNAME} =~ "-xb-" ]]; then
 		FQDN=${HOSTNAME}
