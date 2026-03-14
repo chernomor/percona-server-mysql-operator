@@ -103,6 +103,15 @@ func Bootstrap(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	replicaStatus, _, err := db.ReplicationStatus(ctx)
+	if err != nil {
+		return errors.Wrap(err, "isReplicationRunning")
+	}
+	if replicaStatus == mysqldb.ReplicationStatusActive {
+		log.Printf("Replica is alive")
+		return nil
+	}
+
 	if err := db.StopReplication(ctx); err != nil {
 		return err
 	}
