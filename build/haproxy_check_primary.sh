@@ -17,7 +17,7 @@ MONITOR_USER='monitor'
 MONITOR_PASSWORD=$(/bin/cat /etc/mysql/mysql-users-secret/monitor)
 
 TIMEOUT=${HA_CONNECTION_TIMEOUT:-10}
-MYSQL_CMDLINE="/usr/bin/timeout $TIMEOUT /usr/bin/mysql -BnN -u${MONITOR_USER} -h ${MYSQL_SERVER_IP} -P ${MYSQL_SERVER_PORT}"
+MYSQL_CMDLINE="/usr/bin/timeout $TIMEOUT /usr/bin/mysql --ssl-mode=DISABLED -BnN -u${MONITOR_USER} -h ${MYSQL_SERVER_IP} -P ${MYSQL_SERVER_PORT}"
 
 CLUSTER_TYPE=${CLUSTER_TYPE:-$(/bin/cat /tmp/cluster_type)}
 check_async() {
