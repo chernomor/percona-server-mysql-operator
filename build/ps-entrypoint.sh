@@ -177,7 +177,7 @@ create_default_cnf() {
 		FQDN=${HOSTNAME}
 	else
 		CLUSTER_NAME="$(hostname -f | cut -d'.' -f2)"
-		SERVER_NUM=${HOSTNAME/$CLUSTER_NAME-/}
+		SERVER_NUM=$(echo $HOSTNAME | sed 's/.*-\([0-9]\+\)$/\1/')
 		SERVER_ID=${CLUSTER_HASH}${SERVER_NUM}
 		FQDN="${HOSTNAME}.${SERVICE_NAME}.$(</var/run/secrets/kubernetes.io/serviceaccount/namespace)"
 	fi
