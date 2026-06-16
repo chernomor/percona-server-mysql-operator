@@ -817,6 +817,9 @@ func heartbeatContainer(cr *apiv1.PerconaServerMySQL) corev1.Container {
 		},
 	}
 
+	spec := cr.MySQLSpec()
+	env = append(env, spec.Env...)
+
 	if cr.CompareVersion("1.0.0") >= 0 {
 		t, err := utils.GetCloneTimeout()
 		if err != nil || t <= 0 {
@@ -835,6 +838,7 @@ func heartbeatContainer(cr *apiv1.PerconaServerMySQL) corev1.Container {
 		SecurityContext: cr.Spec.Toolkit.ContainerSecurityContext,
 		Resources:       cr.Spec.Toolkit.Resources,
 		Env:             env,
+		EnvFrom:         spec.EnvFrom,
 		Ports:           []corev1.ContainerPort{},
 		VolumeMounts: []corev1.VolumeMount{
 			{
